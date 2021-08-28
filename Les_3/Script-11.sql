@@ -1,0 +1,132 @@
+DROP DATABASE IS EXISTS VK;
+
+CREATE DATABASE IF NOT EXISTS VK;
+
+USE VK;
+CREATE TABLE users(
+	id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY ,
+	first_name VARCHAR(150) NOT NULL,
+	last_name VARCHAR(150) NOT NULL,
+	email VARCHAR(150) NOT NULL UNIQUE,
+	phone CHAR(11) NOT NULL,
+	password_hash CHAR(65) DEFAULT NULL,
+	created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	INDEX (phone),
+	INDEX (email)
+);
+
+INSERT INTO users VALUES (DEFAULT,'PETYA','PETUKHOV', 'PETYAMAIL@COM', '12345678910', DEFAULT, DEFAULT );
+INSERT INTO users VALUES (DEFAULT , 'VASYA', 'PUPKIN','VASYAGMAIL@.COM', '23456789123', DEFAULT , DEFAULT );
+
+SELECT * FROM users ;
+
+
+CREATE TABLE profiles(
+	user_id BIGINT UNSIGNED NOT NULL PRIMARY KEY ,
+	gender ENUM('F', 'M', 'X') NOT NULL ,
+	birthday DATE NOT NULL ,
+	photo_id BIGINT UNSIGNED ,
+	city VARCHAR(130),
+	country VARCHAR(150),
+	FOREIGN KEY (user_id) REFERENCES users(id)  ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+INSERT INTO profiles VALUES (1,'M','1985-05-17',NULL,'MOSCOW','RUSSIA');
+INSERT INTO profiles VALUES (2,'M','1989-02-26',NULL,'MOSCOW','RUSSIA');
+
+SELECT * FROM users ;
+
+CREATE TABLE messages(
+	id serial PRIMARY KEY,
+	from_user_id BIGINT UNSIGNED NOT NULL,
+	to_user_id BIGINT UNSIGNED NOT NULL,
+	txt TEXT NOT NULL,
+	is_delivered BOOLEAN DEFAULT FALSE,
+	created_at DATETIME NOT NULL DEFAULT NOW(),
+	updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	INDEX messages_from_user_id_idx (from_user_id),
+	INDEX messages_to_user_id_idx(to_user_id), 
+	CONSTRAINT fk_messages_from_user_id FOREIGN KEY (from_user_id) REFERENCES users(id),
+	CONSTRAINT fk_messages_to_user_id FOREIGN KEY (to_user_id) REFERENCES users(id)
+);
+
+INSERT INTO messages VALUES(DEFAULT,1,2,'HI VASILIY!!!',1,DEFAULT,DEFAULT);
+INSERT INTO messages VALUES(DEFAULT,2,1,'HI PETYA!!!',1,DEFAULT,DEFAULT);
+
+SELECT * FROM messages;
+
+
+DESCRIBE messages;
+
+CREATE TABLE friend_requests(
+	from_user_id BIGINT UNSIGNED NOT NULL,
+	to_user_id BIGINT UNSIGNED NOT NULL,
+	accepted BOOLEAN DEFAULT FALSE,
+	PRIMARY KEY (from_user_id,to_user_id),
+	KEY (from_user_id),
+	KEY (to_user_id),
+	FOREIGN KEY (from_user_id) REFERENCES users(id),
+	FOREIGN KEY (to_user_id ) REFERENCES users(id)
+);
+
+
+INSERT INTO friend_requests VALUES (1,2,1);
+SELECT * FROM friend_requests;
+
+
+CREATE TABLE communities (
+	id serial PRIMARY KEY,
+	NAME VARCHAR(150) NOT NULL,
+	description VARCHAR (255),
+	admin_id BIGINT UNSIGNED NOT NULL,
+	KEY(ADMIN_ID),
+	FOREIGN KEY (ADMIN_ID) REFERENCES users(id)
+);
+
+INSERT INTO communities VALUES (DEFAULT,'NUMBER1','I AM NUMBER ONE',1);
+INSERT INTO communities VALUES (DEFAULT,'NUMBER2','I AM NUMBER TWO',1);
+
+
+SELECT * FROM communities; 
+
+CREATE TABLE communities_users(
+	community_id BIGINT UNSIGNED NOT NULL,
+	user_id BIGINT UNSIGNED NOT NULL,
+	created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY (community_id,user_id),
+	KEY (community_id),
+	KEY (user_id),
+	FOREIGN KEY (community_id) REFERENCES communities(id),
+	FOREIGN KEY (user_id) REFERENCES users(id)
+); 
+
+INSERT INTO communities_users VALUES (1,2,DEFAULT);
+
+CREATE TABLE media_types(
+	id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+	name VARCHAR(50) NOT NULL UNIQUE 
+);
+
+INSERT INTO media_types VALUES (DEFAULT,'изображение');
+INSERT INTO media_types VALUES (DEFAULT,'музыка');
+INSERT INTO media_types VALUES (DEFAULT,'документ');
+
+SELECT * FROM media_types;
+
+
+CREATE TABLE media(
+	id serial PRIMARY KEY,
+	user_id BIGINT UNSIGNED NOT NULL,
+	media_types_id INT UNSIGNED NOT NULL,
+	file_nime VARCHAR(255),
+	file_size BIGINT UNSIGNED,
+	created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	KEY (media_types_id),
+	KEY(user_id),
+	FOREIGN KEY (media_types_id) REFERENCES media_types(id),
+	FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+INSERT INTO media VALUES (DEFAULT, 1,1,'TEST.JPG',100,DEFAULT);
+INSERT INTO media VALUES (DEFAULT, 1,2,'RU.MP3',100,DEFAULT);
+INSERT INTO media VALUES (DEFAULT, 2,3,'TEST.TXT',100,DEFAULT);
